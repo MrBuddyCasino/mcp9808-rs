@@ -1,0 +1,20 @@
+[package]
+name = "mcp9808"
+version = "0.1.0"
+authors = ["Michael Böckling <michael@boeckling.net>"]
+categories = ["embedded", "hardware-support", "no-std"]
+keywords = ["embedded-hal", "temperature", "sensor"]
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/MrBuddyCasino/mcp9808-rs"
+
+[dependencies]
+embedded-hal = "0.1.2"
+bit_field = "0.9.0"
+
+[dependencies.cast]
+version = "0.2.2"
+default-features = false
+
+[profile.release]
+debug = false
+lto = true
