@@ -23,7 +23,7 @@ impl ManufacturerId for Register {
 
     fn get_manufacturer_id(&self) -> u16 {
         // buffer is guaranteed to be 2 bytes here
-        self.as_u16().unwrap()
+        self.as_u16()
     }
 
     /// are we talking to the right device?

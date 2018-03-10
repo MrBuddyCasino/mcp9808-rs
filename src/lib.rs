@@ -100,12 +100,3 @@ impl<I2C, E> MCP9808<I2C>
         return Ok(());
     }
 }
-
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
-}

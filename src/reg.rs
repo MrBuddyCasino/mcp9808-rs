@@ -1,4 +1,5 @@
-use bit_field::BitArray;
+use bit_field::BitField;
+//use bit_field::BitArray;
 
 #[derive(Debug, Copy, Clone)]
 pub struct Register {
@@ -39,24 +40,66 @@ impl Register {
         self.buf[0]
     }
 
-    pub fn set_lobyte(&mut self, val: u8) {
+    pub fn set_msb(&mut self, val: u8) {
         self.buf[0] = val;
     }
 
     pub fn get_bit(&self, offset: usize) -> bool {
-        let bit = if offset > 7 { 15 - offset } else { offset };
-        self.buf.get_bit(bit)
+        if self.len == 1 {
+            return self.get_msb().get_bit(offset);
+        }
+
+        if offset > 7 {
+            return self.get_msb().get_bit(offset - 8);
+        } else {
+            return self.get_lsb().unwrap().get_bit(offset);
+        }
     }
 
     /// datasheet numbers bits from lsb-0, we store them as msb
     pub fn set_bit(&mut self, offset: usize, val: bool) {
-        let bit = if offset > 7 { 15 - offset } else { offset };
-        self.buf.set_bit(bit, val);
+        if offset + 1 > self.len as usize * 8 {
+            panic!("out of bounds access")
+        }
+
+        if self.len == 1 {
+            self.buf[0].set_bit(offset, val);
+        }
+
+        if offset > 7 {
+            self.buf[0].set_bit(offset - 8, val);
+        } else {
+            self.buf[1].set_bit(offset, val);
+        }
     }
 
-    pub fn as_u16(&self) -> Option<u16> {
+    pub fn as_u16(&self) -> u16 {
         let (lo, hi) = (self.get_lsb(), self.get_msb());
-        if lo.is_none() { () }
-        Some(((hi as u16) << 8) + (lo.unwrap() as u16))
+        if lo.is_none() { return self.get_msb() as u16 }
+        ((hi as u16) << 8) + (lo.unwrap() as u16)
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+
+    #[test]
+    fn bitfield_manipulation() {
+        let msb: u8 = 0b00000000;
+        let lsb: u8 = 0b00000000;
+        let mut reg: Register = Register::new(0, &[msb, lsb], 2).unwrap();
+
+        assert_eq!(reg.as_u16(), 0);
+
+        assert_eq!(reg.get_bit(15), false);
+        reg.set_bit(15, true);
+        assert_eq!(reg.get_bit(15), true);
+
+        assert_eq!(reg.get_bit(0), false);
+        reg.set_bit(0, true);
+        assert_eq!(reg.get_bit(0), true);
     }
 }

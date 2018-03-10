@@ -20,7 +20,6 @@ pub trait Resolution {
     fn get_register_ptr() -> u8;
     fn get_resolution(&self) -> Result<ResolutionVal, u8>;
     fn set_resolution(&mut self, p: ResolutionVal);
-    fn get_precision_factor(&self) -> Result<f32, u8>;
 }
 
 impl Resolution for Register {
@@ -33,7 +32,7 @@ impl Resolution for Register {
     }
 
     fn get_resolution(&self) -> Result<ResolutionVal, u8> {
-        let val: u8 = 0;
+        let val: u8 = self.get_msb();
         match val {
             0b00 => Ok(ResolutionVal::RES_0_5C),
             0b01 => Ok(ResolutionVal::RES_0_25C),
@@ -44,23 +43,6 @@ impl Resolution for Register {
     }
 
     fn set_resolution(&mut self, p: ResolutionVal) {
-        self.set_lobyte(p as u8);
-    }
-
-    fn get_precision_factor(&self) -> Result<f32, u8> {
-        match self.get_resolution()? {
-            ResolutionVal::RES_0_0625C => Ok(0.0625),
-            ResolutionVal::RES_0_125C => Ok(0.125),
-            ResolutionVal::RES_0_25C => Ok(0.25),
-            ResolutionVal::RES_0_5C => Ok(0.5)
-        }
+        self.set_msb(p as u8);
     }
 }
-
-
-//struct Resolution(f32);
-//
-//const RES_0_5C: Resolution = Resolution(0.5);
-//const RES_0_25C: Resolution = Resolution(0.25);
-//const RES_0_125C: Resolution = Resolution(0.125);
-//const RES_0_0625C: Resolution = Resolution(0.0625);
