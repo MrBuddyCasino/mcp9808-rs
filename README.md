@@ -18,8 +18,13 @@ Details and datasheet: http://www.microchip.com/wwwproducts/en/en556182
 
 
 ## Status
-
-- [x] Work In Progress
+Work In Progress
+- [x] temperature register, though slightly imprecise
+- [x] configuration register
+- [x] resolution register
+- [x] manufacturer ID and device ID
+- [ ] temperature alert upper & lower
+- [ ] critical temperature
 
 
 ## License
