@@ -1,44 +1,62 @@
-use bit_field::BitField;
+use bit_field::BitArray;
 
 #[derive(Debug, Copy, Clone)]
 pub struct Register {
     /// points to a specific register in the sensor
-    pointer: u8,
-    /// register contents
-    data: u16,
+    ptr: u8,
+    /// register contents, either 1 or 2 bytes
+    buf: [u8; 2],
+    len: u8,
 }
 
 impl Register {
-    pub fn new(ptr: u8, buf: [u8; 2]) -> Self {
-        Register { pointer: ptr, data: Register::make_word(buf) }
+    pub fn new(ptr: u8, buffer: &[u8], len: u8) -> Result<Self, u8> {
+        if buffer.len() != len as usize {
+            return Err(buffer.len() as u8);
+        }
+
+        // 2nd byte is optional
+        let lsb = buffer.get(1).cloned().unwrap_or(0);
+        let buf = [buffer[0], lsb];
+        Ok(Register { ptr, buf, len })
+    }
+
+    pub fn get_buf(&self) -> &[u8] {
+        &self.buf[0..self.len as usize]
     }
 
     pub fn get_ptr(&self) -> u8 {
-        self.pointer
+        self.ptr
     }
 
-    pub fn get_data(&self) -> u16 {
-        self.data
+    /// lower byte, bits 0-7, availability depends on register type
+    pub fn get_lsb(&self) -> Option<u8> {
+        self.buf.get(1).cloned()
     }
 
-    pub fn hibyte(&self) -> u8 {
-        ((self.data >> 8) & 0xff) as u8
+    /// upper byte, bits 8-15, always available
+    pub fn get_msb(&self) -> u8 {
+        self.buf[0]
     }
 
-    pub fn lobyte(&self) -> u8 {
-        (self.data & 0xff) as u8
+    pub fn set_lobyte(&mut self, val: u8) {
+        self.buf[0] = val;
     }
 
     pub fn get_bit(&self, offset: usize) -> bool {
-        self.data.get_bit(offset)
+        let bit = if offset > 7 { 15 - offset } else { offset };
+        self.buf.get_bit(bit)
     }
 
+    /// datasheet numbers bits from lsb-0, we store them as msb
     pub fn set_bit(&mut self, offset: usize, val: bool) {
-        self.data.set_bit(offset, val);
+        let bit = if offset > 7 { 15 - offset } else { offset };
+        self.buf.set_bit(bit, val);
     }
 
-    pub fn make_word(buf: [u8; 2]) -> u16 {
-        let (hi, lo) = (buf[0], buf[1]);
-        ((hi as u16) << 8) + (lo as u16)
+    pub fn as_u16(&self) -> Option<u16> {
+        let (lo, hi) = (self.get_lsb(), self.get_msb());
+        if lo.is_none() { () }
+        Some(((hi as u16) << 8) + (lo.unwrap() as u16))
     }
 }

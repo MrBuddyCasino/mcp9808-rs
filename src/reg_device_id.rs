@@ -2,10 +2,11 @@ use reg::Register;
 
 const REGISTER_PTR: u8 = 0b0111;
 const DEVICE_ID: u8 = 0x04;
+const REGISTER_SIZE: u8 = 2;
 
 /// upper byte: DeviceId, lower byte: Device Revision
 pub trait DeviceId {
-    fn new(reg_data: [u8; 2]) -> Self;
+    fn new(buf: &[u8]) -> Result<Self, u8> where Self: Sized;
     fn get_register_ptr() -> u8;
     fn is_valid_device(&self) -> bool;
     fn get_device_id(&self) -> u8;
@@ -13,8 +14,8 @@ pub trait DeviceId {
 }
 
 impl DeviceId for Register {
-    fn new(reg_data: [u8; 2]) -> Self {
-        Register::new(REGISTER_PTR as u8, reg_data)
+    fn new(buf: &[u8]) -> Result<Self, u8> {
+        Register::new(REGISTER_PTR, &buf, REGISTER_SIZE)
     }
 
     fn get_register_ptr() -> u8 {
@@ -26,11 +27,13 @@ impl DeviceId for Register {
         self.get_device_id() == DEVICE_ID
     }
 
+    /// get device id
     fn get_device_id(&self) -> u8 {
-        self.hibyte()
+        self.get_msb()
     }
 
+    /// get device revision
     fn get_device_rev(&self) -> u8 {
-        self.lobyte()
+        self.get_lsb().unwrap()
     }
 }

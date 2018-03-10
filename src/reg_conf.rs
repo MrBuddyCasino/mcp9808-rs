@@ -99,9 +99,10 @@ pub enum LimitHysteresis {
 }
 
 const REGISTER_PTR: u8 = 0b0001;
+const REGISTER_SIZE: u8 = 2;
 
 pub trait Configuration {
-    fn new(reg_data: [u8; 2]) -> Self;
+    fn new(buf: &[u8]) -> Result<Self, u8> where Self: Sized;
     fn get_register_ptr() -> u8;
 
     fn get_alert_mode(&self) -> AlertMode;
@@ -126,8 +127,8 @@ pub trait Configuration {
 
 /// Sensor configuration register.
 impl Configuration for Register {
-    fn new(reg_data: [u8; 2]) -> Self {
-        Register::new(REGISTER_PTR, reg_data)
+    fn new(buf: &[u8]) -> Result<Self, u8> {
+        Register::new(REGISTER_PTR, &buf, REGISTER_SIZE)
     }
 
     fn get_register_ptr() -> u8 {

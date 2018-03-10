@@ -8,7 +8,7 @@ pub trait Write {
     type WriteError;
 
     /// Write a command to SSD1306
-    fn write_register(&mut self, addr: u8, reg_ptr: u8, reg_data: [u8; 2]) -> Result<(), Self::WriteError>;
+    fn write_register(&mut self, addr: u8, reg_ptr: u8, reg_data: &[u8]) -> Result<(), Self::WriteError>;
 }
 
 impl<I2C> Write for I2C
@@ -17,9 +17,13 @@ impl<I2C> Write for I2C
 {
     type WriteError = I2C::Error;
 
-    fn write_register(&mut self, addr: u8, reg_ptr: u8, reg_data: [u8; 2]) -> Result<(), Self::WriteError> {
-        let mut buf = [reg_ptr, reg_data[0], reg_data[1]];
-        self.write(addr, &mut buf)
+    fn write_register(&mut self, addr: u8, reg_ptr: u8, reg_data: &[u8]) -> Result<(), Self::WriteError> {
+        // reg ptr + 1 or 2 bytes
+        let mut buf = [reg_ptr; 3];
+        for (i, item) in reg_data.iter().enumerate() {
+            buf[i + 1] = *item;
+        }
+        self.write(addr, &buf[0..reg_data.len() as usize])
     }
 }
 

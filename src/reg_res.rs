@@ -1,6 +1,7 @@
 use reg::Register;
 
 const REGISTER_PTR: u8 = 0b1000;
+const REGISTER_SIZE: u8 = 1;
 
 #[allow(non_camel_case_types)]
 pub enum ResolutionVal {
@@ -15,16 +16,16 @@ pub enum ResolutionVal {
 }
 
 pub trait Resolution {
-    fn new(reg_data: [u8; 2]) -> Self;
+    fn new(buf: &[u8]) -> Result<Self, u8> where Self: Sized;
     fn get_register_ptr() -> u8;
     fn get_resolution(&self) -> Result<ResolutionVal, u8>;
-    fn set_resolution(&self, p: ResolutionVal);
+    fn set_resolution(&mut self, p: ResolutionVal);
     fn get_precision_factor(&self) -> Result<f32, u8>;
 }
 
 impl Resolution for Register {
-    fn new(reg_data: [u8; 2]) -> Self {
-        Register::new(REGISTER_PTR as u8, reg_data)
+    fn new(buf: &[u8]) -> Result<Self, u8> {
+        Register::new(REGISTER_PTR, &buf, REGISTER_SIZE)
     }
 
     fn get_register_ptr() -> u8 {
@@ -42,8 +43,8 @@ impl Resolution for Register {
         }
     }
 
-    fn set_resolution(&self, _p: ResolutionVal) {
-        unimplemented!()
+    fn set_resolution(&mut self, p: ResolutionVal) {
+        self.set_lobyte(p as u8);
     }
 
     fn get_precision_factor(&self) -> Result<f32, u8> {
