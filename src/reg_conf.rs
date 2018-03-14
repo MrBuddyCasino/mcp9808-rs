@@ -1,4 +1,5 @@
 use reg::Register;
+use core::fmt::Debug;
 
 /// Alert Output Mode bit
 /// This bit cannot be altered when either of the Lock bits are set (bit 6 and bit 7).
@@ -101,8 +102,7 @@ pub enum LimitHysteresis {
 const REGISTER_PTR: u8 = 0b0001;
 const REGISTER_SIZE: u8 = 2;
 
-pub trait Configuration {
-    fn new(buf: &[u8]) -> Result<Self, u8> where Self: Sized;
+pub trait Configuration: Debug + Copy + Clone {
     fn get_register_ptr() -> u8;
 
     fn get_alert_mode(&self) -> AlertMode;
@@ -125,12 +125,12 @@ pub trait Configuration {
     fn set_shutdown_mode(&mut self, mode: ShutdownMode);
 }
 
+pub fn new() -> Register {
+    Register::new(REGISTER_PTR, REGISTER_SIZE)
+}
+
 /// Sensor configuration register.
 impl Configuration for Register {
-    fn new(buf: &[u8]) -> Result<Self, u8> {
-        Register::new(REGISTER_PTR, &buf, REGISTER_SIZE)
-    }
-
     fn get_register_ptr() -> u8 {
         REGISTER_PTR
     }

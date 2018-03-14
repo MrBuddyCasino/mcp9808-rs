@@ -1,3 +1,6 @@
+#![feature(conservative_impl_trait, universal_impl_trait)]
+//#![feature(trait_alias)]
+
 #![deny(warnings)]
 #![no_std]
 
@@ -6,15 +9,11 @@ extern crate cast;
 extern crate embedded_hal as hal;
 
 use hal::blocking::i2c;
-use prelude::Read;
-use prelude::Write;
-use reg::Register;
 use reg_conf::Configuration;
 use reg_device_id::DeviceId;
 use reg_manuf_id::ManufacturerId;
 use reg_temp::Temperature;
 
-pub mod prelude;
 pub mod reg;
 pub mod reg_conf;
 pub mod reg_device_id;
@@ -56,47 +55,36 @@ impl<I2C, E> MCP9808<I2C>
         }
     }
 
-    /// Release resources
+    /// release resources
     pub fn free(self) -> I2C {
         self.i2c
     }
 
-    fn register_from_ic2<O: FnOnce(&[u8]) -> Result<Register, u8>>(&mut self, reg_ptr: u8, maker: O) -> Result<Register, Error<E>> {
-        let buf = &self.i2c.read_register(self.addr, reg_ptr).map_err(Error::I2c)?;
-        let reg = maker(buf).map_err(|e: u8| Error::RegisterSizeMismatch(e))?;
+    fn register_from_ic2<T>(&mut self, mut reg: T) -> Result<T, Error<E>>
+        where T: reg::Read<I2C, E>,
+              I2C: i2c::WriteRead {
+        reg.read_from_device(&mut self.i2c, self.addr).map_err(Error::I2c)?;
         Ok(reg)
     }
 
-    /// send register content to sensor
-    fn write_register(&mut self, reg: Register) -> Result<(), Error<E>>
-    {
-        &self.i2c.write_register(self.addr, reg.get_ptr(), reg.get_buf()).map_err(Error::I2c)?;
-        Ok(())
+    pub fn read_manufacturer_id(&mut self) -> Result<impl ManufacturerId, Error<E>> {
+        self.register_from_ic2(reg_manuf_id::new())
     }
 
-    pub fn read_manufacturer_id(&mut self) -> Result<Register, Error<E>> {
-        let ptr = <Register as ManufacturerId>::get_register_ptr();
-        self.register_from_ic2(ptr, |buf: &[u8]| ManufacturerId::new(buf))
-    }
-
-    pub fn read_device_id(&mut self) -> Result<Register, Error<E>> {
-        let ptr = <Register as DeviceId>::get_register_ptr();
-        self.register_from_ic2(ptr, |buf: &[u8]| DeviceId::new(buf))
+    pub fn read_device_id(&mut self) -> Result<impl DeviceId, Error<E>> {
+        self.register_from_ic2(reg_device_id::new())
     }
 
     /// Read temperature register. Its double-buffered so no wait required.
-    pub fn read_temperature(&mut self) -> Result<Register, Error<E>> {
-        let ptr = <Register as Temperature>::get_register_ptr();
-        self.register_from_ic2(ptr, |buf: &[u8]| Temperature::new(buf))
+    pub fn read_temperature(&mut self) -> Result<impl Temperature, Error<E>> {
+        self.register_from_ic2(reg_temp::new())
     }
 
-    pub fn read_configuration(&mut self) -> Result<Register, Error<E>> {
-        let ptr = <Register as Configuration>::get_register_ptr();
-        self.register_from_ic2(ptr, |buf: &[u8]| Configuration::new(buf))
+    pub fn read_configuration(&mut self) -> Result<impl Configuration, Error<E>> {
+        self.register_from_ic2(reg_conf::new())
     }
 
-    pub fn write_configuration(&mut self, reg: Register) -> Result<(), Error<E>> {
-        self.write_register(reg)?;
-        return Ok(());
+    pub fn write_register<R: reg::Write<I2C>>(&mut self, reg: R) -> Result<(), R::WriteError> {
+        reg.write_to_device(&mut self.i2c, self.addr)
     }
 }

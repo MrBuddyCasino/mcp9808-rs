@@ -3,22 +3,23 @@ extern crate cast;
 use cast::f32;
 use reg::Register;
 use reg_res::ResolutionVal;
+use core::fmt::Debug;
 
 const REGISTER_PTR: u8 = 0b0101;
 const REGISTER_SIZE: u8 = 2;
 
-pub trait Temperature {
-    fn new(buf: &[u8]) -> Result<Self, u8> where Self: Sized;
+pub trait Temperature: Debug + Copy + Clone {
+    //    fn new(buf: &[u8]) -> Result<Temperature, u8> where Temperature: Sized;
     fn get_register_ptr() -> u8;
     fn is_temp_critical(&self) -> bool;
     fn get_temperature(&self, res: ResolutionVal) -> f32;
 }
 
-impl Temperature for Register {
-    fn new(buf: &[u8]) -> Result<Self, u8> {
-        Register::new(REGISTER_PTR, &buf, REGISTER_SIZE)
-    }
+pub fn new() -> Register {
+    Register::new(REGISTER_PTR, REGISTER_SIZE)
+}
 
+impl Temperature for Register {
     fn get_register_ptr() -> u8 {
         REGISTER_PTR
     }
@@ -62,20 +63,19 @@ mod tests {
 
     #[test]
     fn temp_crit() {
-        let msb: u8 = 0b10000000;
-        let lsb: u8 = 0b00000000;
-        let mut reg: Register = Temperature::new(&[msb, lsb]).unwrap();
-        assert_eq!(reg.is_temp_critical(), true);
+        let mut reg = new();
 
-        reg.set_bit(15, false);
         assert_eq!(reg.is_temp_critical(), false);
+        reg.set_bit(15, true);
+        assert_eq!(reg.is_temp_critical(), true);
     }
 
-        #[test]
+    #[test]
     fn temp_conversion() {
         let msb: u8 = 0b00000001;
         let lsb: u8 = 0b10010100;
-        let reg: Register = Temperature::new(&[msb, lsb]).unwrap();
+        let mut reg = new();
+        reg.set_buf([msb, lsb]);
 
         assert_eq!(reg.is_temp_critical(), false);
 

@@ -1,5 +1,5 @@
 use bit_field::BitField;
-//use bit_field::BitArray;
+use hal::blocking::i2c;
 
 #[derive(Debug, Copy, Clone)]
 pub struct Register {
@@ -7,23 +7,64 @@ pub struct Register {
     ptr: u8,
     /// register contents, either 1 or 2 bytes
     buf: [u8; 2],
+    /// actual register size in bytes, either 1 or 2
     len: u8,
 }
 
-impl Register {
-    pub fn new(ptr: u8, buffer: &[u8], len: u8) -> Result<Self, u8> {
-        if buffer.len() != len as usize {
-            return Err(buffer.len() as u8);
-        }
+/// trait for a register that can be read from an i2c device
+pub trait Read<I2C, E> {
+    /// Error type
+    type ReadError;
 
-        // 2nd byte is optional
-        let lsb = buffer.get(1).cloned().unwrap_or(0);
-        let buf = [buffer[0], lsb];
-        Ok(Register { ptr, buf, len })
+    fn read_from_device(&mut self, i2c: &mut I2C, addr: u8) -> Result<(), E>;
+}
+
+
+impl<I2C, E> Read<I2C, E> for Register
+    where
+        I2C: i2c::WriteRead<Error=E>, {
+    type ReadError = I2C::Error;
+
+    fn read_from_device(&mut self, i2c: &mut I2C, addr: u8) -> Result<(), E> {
+        i2c.write_read(addr, &[self.ptr], &mut self.buf[0..self.len as usize])?;
+        Ok(())
+    }
+}
+
+/// trait for a register that can be written to an i2c device
+pub trait Write<I2C> {
+    /// Error type
+    type WriteError;
+
+    fn write_to_device(&self, i2c: &mut I2C, addr: u8) -> Result<(), Self::WriteError>;
+}
+
+impl<I2C> Write<I2C> for Register
+    where I2C: i2c::Write {
+    type WriteError = I2C::Error;
+
+    fn write_to_device(&self, i2c: &mut I2C, addr: u8) -> Result<(), Self::WriteError> {
+        // reg ptr + 1 or 2 bytes
+        let mut buf = [self.get_ptr(); 3];
+        for (i, item) in self.get_buf().iter().enumerate() {
+            buf[i + 1] = *item;
+        }
+        i2c.write(addr, &buf[0..self.len as usize])
+    }
+}
+
+impl Register {
+    pub fn new(ptr: u8, len: u8) -> Self {
+        let buf = [0u8, 0];
+        Register { ptr, buf, len }
     }
 
     pub fn get_buf(&self) -> &[u8] {
         &self.buf[0..self.len as usize]
+    }
+
+    pub fn set_buf(&mut self, val: [u8; 2]) {
+        self.buf = val;
     }
 
     pub fn get_ptr(&self) -> u8 {
@@ -32,7 +73,14 @@ impl Register {
 
     /// lower byte, bits 0-7, availability depends on register type
     pub fn get_lsb(&self) -> Option<u8> {
-        self.buf.get(1).cloned()
+        if self.len < 2 {
+            return None;
+        }
+        Some(self.buf[1])
+    }
+
+    pub fn set_lsb(&mut self, val: u8) {
+        self.buf[1] = val;
     }
 
     /// upper byte, bits 8-15, always available
@@ -75,7 +123,7 @@ impl Register {
 
     pub fn as_u16(&self) -> u16 {
         let (lo, hi) = (self.get_lsb(), self.get_msb());
-        if lo.is_none() { return self.get_msb() as u16 }
+        if lo.is_none() { return self.get_msb() as u16; }
         ((hi as u16) << 8) + (lo.unwrap() as u16)
     }
 }
@@ -85,12 +133,9 @@ impl Register {
 mod tests {
     use super::*;
 
-
     #[test]
     fn bitfield_manipulation() {
-        let msb: u8 = 0b00000000;
-        let lsb: u8 = 0b00000000;
-        let mut reg: Register = Register::new(0, &[msb, lsb], 2).unwrap();
+        let mut reg: Register = Register::new(0, 2);
 
         assert_eq!(reg.as_u16(), 0);
 

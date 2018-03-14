@@ -1,23 +1,29 @@
 use reg::Register;
+use core::fmt::Debug;
 
 const REGISTER_PTR: u8 = 0b0111;
 const DEVICE_ID: u8 = 0x04;
 const REGISTER_SIZE: u8 = 2;
 
-/// upper byte: DeviceId, lower byte: Device Revision
-pub trait DeviceId {
-    fn new(buf: &[u8]) -> Result<Self, u8> where Self: Sized;
+
+pub trait DeviceId: Debug + Copy + Clone {
     fn get_register_ptr() -> u8;
+
+    /// is the deviceId what it should be?
     fn is_valid_device(&self) -> bool;
+
+    /// upper byte: DeviceId
     fn get_device_id(&self) -> u8;
+
+    /// lower byte: Device Revision
     fn get_device_rev(&self) -> u8;
 }
 
-impl DeviceId for Register {
-    fn new(buf: &[u8]) -> Result<Self, u8> {
-        Register::new(REGISTER_PTR, &buf, REGISTER_SIZE)
-    }
+pub fn new() -> Register {
+    Register::new(REGISTER_PTR, REGISTER_SIZE)
+}
 
+impl DeviceId for Register {
     fn get_register_ptr() -> u8 {
         REGISTER_PTR
     }

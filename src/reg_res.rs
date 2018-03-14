@@ -1,4 +1,5 @@
 use reg::Register;
+use core::fmt::Debug;
 
 const REGISTER_PTR: u8 = 0b1000;
 const REGISTER_SIZE: u8 = 1;
@@ -15,18 +16,17 @@ pub enum ResolutionVal {
     RES_0_0625C = 0b11,
 }
 
-pub trait Resolution {
-    fn new(buf: &[u8]) -> Result<Self, u8> where Self: Sized;
+pub trait Resolution: Debug + Copy + Clone {
     fn get_register_ptr() -> u8;
     fn get_resolution(&self) -> Result<ResolutionVal, u8>;
     fn set_resolution(&mut self, p: ResolutionVal);
 }
 
-impl Resolution for Register {
-    fn new(buf: &[u8]) -> Result<Self, u8> {
-        Register::new(REGISTER_PTR, &buf, REGISTER_SIZE)
-    }
+pub fn new() -> impl Resolution {
+    Register::new(REGISTER_PTR, REGISTER_SIZE)
+}
 
+impl Resolution for Register {
     fn get_register_ptr() -> u8 {
         REGISTER_PTR
     }
