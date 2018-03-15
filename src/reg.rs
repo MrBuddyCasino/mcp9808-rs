@@ -13,6 +13,14 @@ pub struct Register {
 
 impl Register {
     pub fn new(ptr: u8, len: u8) -> Self {
+        if ptr == 0 || ptr > 0b1000u8 {
+            panic!("invalid pointer value: reserved")
+        }
+
+        if len > 2 {
+            panic!("length > 2")
+        }
+
         let buf = [0u8, 0];
         Register { ptr, buf, len }
     }
@@ -97,7 +105,7 @@ mod tests {
 
     #[test]
     fn bitfield_manipulation() {
-        let mut reg: Register = Register::new(0, 2);
+        let mut reg: Register = Register::new(1, 2);
 
         assert_eq!(reg.as_u16(), 0);
 

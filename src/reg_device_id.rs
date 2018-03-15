@@ -1,14 +1,12 @@
 use reg::Register;
-use core::fmt::Debug;
+use prelude::Read;
 
 const REGISTER_PTR: u8 = 0b0111;
-const DEVICE_ID: u8 = 0x04;
 const REGISTER_SIZE: u8 = 2;
+const DEVICE_ID: u8 = 0x04;
 
 
-pub trait DeviceId: Debug + Copy + Clone {
-    fn get_register_ptr() -> u8;
-
+pub trait DeviceId: Read {
     /// is the deviceId what it should be?
     fn is_valid_device(&self) -> bool;
 
@@ -24,10 +22,6 @@ pub fn new() -> Register {
 }
 
 impl DeviceId for Register {
-    fn get_register_ptr() -> u8 {
-        REGISTER_PTR
-    }
-
     /// are we talking to the right device?
     fn is_valid_device(&self) -> bool {
         self.get_device_id() == DEVICE_ID

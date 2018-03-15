@@ -43,10 +43,10 @@ impl Temperature for Register {
 
 fn get_precision_factor(res: ResolutionVal) -> f32 {
     match res {
-        ResolutionVal::RES_0_0625C => 0.0625,
-        ResolutionVal::RES_0_125C => 0.125,
-        ResolutionVal::RES_0_25C => 0.25,
-        ResolutionVal::RES_0_5C => 0.5
+        ResolutionVal::Deg_0_0625C => 0.0625,
+        ResolutionVal::Deg_0_125C => 0.125,
+        ResolutionVal::Deg_0_25C => 0.25,
+        ResolutionVal::Deg_0_5C => 0.5
     }
 }
 
@@ -73,7 +73,7 @@ mod tests {
 
         assert_eq!(reg.is_temp_critical(), false);
 
-        let temp = reg.get_temperature(ResolutionVal::RES_0_0625C);
+        let temp = reg.get_temperature(ResolutionVal::Deg_0_0625C);
         assert_eq!(temp, 25.25);
     }
 }

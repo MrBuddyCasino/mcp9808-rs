@@ -1,12 +1,11 @@
 use reg::Register;
-use core::fmt::Debug;
+use prelude::Read;
 
 const REGISTER_PTR: u8 = 0b0110;
 const MANUFACTURER_ID: u16 = 0x0054;
 const REGISTER_SIZE: u8 = 2;
 
-pub trait ManufacturerId: Debug + Copy + Clone {
-    fn get_register_ptr() -> u8;
+pub trait ManufacturerId: Read {
     fn get_manufacturer_id(&self) -> u16;
     fn is_valid_manufacturer(&self) -> bool;
 }
@@ -17,10 +16,6 @@ pub fn new() -> Register {
 }
 
 impl ManufacturerId for Register {
-    fn get_register_ptr() -> u8 {
-        REGISTER_PTR
-    }
-
     fn get_manufacturer_id(&self) -> u16 {
         // buffer is guaranteed to be 2 bytes here
         self.as_u16()

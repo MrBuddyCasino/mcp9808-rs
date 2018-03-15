@@ -1,5 +1,6 @@
-use reg::Register;
 use core::fmt::Debug;
+use bit_field::BitField;
+use reg::Register;
 
 /// Alert Output Mode bit
 /// This bit cannot be altered when either of the Lock bits are set (bit 6 and bit 7).
@@ -92,37 +93,49 @@ pub enum ShutdownMode {
 /// tUPPER and tLOWER Limit Hysteresis bits
 /// This bit can not be altered when either of the Lock bits are set (bit 6 and bit 7).
 /// This bit can be programmed in Shutdown mode.
-pub enum LimitHysteresis {
-    Deg0_0C = 0b00,
-    Deg1_5C = 0b01,
-    Deg3_0C = 0b10,
-    Deg6_0C = 0b11,
+#[allow(non_camel_case_types)]
+#[derive(Clone, Copy, Debug, PartialEq)]
+#[repr(u8)]
+pub enum Hysteresis {
+    Deg_0_0C = 0b00,
+    Deg_1_5C = 0b01,
+    Deg_3_0C = 0b10,
+    Deg_6_0C = 0b11,
 }
 
 const REGISTER_PTR: u8 = 0b0001;
 const REGISTER_SIZE: u8 = 2;
 
 pub trait Configuration: Debug + Copy + Clone {
-    fn get_register_ptr() -> u8;
-
     fn get_alert_mode(&self) -> AlertMode;
     fn set_alert_mode(&mut self, mode: AlertMode);
+
     fn get_alert_polarity(&self) -> AlertPolarity;
     fn set_alert_polarity(&mut self, mode: AlertPolarity);
+
     fn get_alert_select(&self) -> AlertSelect;
     fn set_alert_select(&mut self, mode: AlertSelect);
+
     fn get_alert_control(&self) -> AlertControl;
     fn set_alert_control(&mut self, mode: AlertControl);
+
     fn get_alert_status(&self) -> AlertStatus;
     fn set_alert_status(&mut self, mode: AlertStatus);
+
     fn get_interrupt_clear(&self) -> InterruptClear;
     fn set_interrupt_clear(&mut self, mode: InterruptClear);
+
     fn get_window_lock(&self) -> WindowLock;
     fn set_window_lock(&mut self, mode: WindowLock);
+
     fn get_critical_lock(&self) -> CriticalLock;
     fn set_critical_lock(&mut self, mode: CriticalLock);
+
     fn get_shutdown_mode(&self) -> ShutdownMode;
     fn set_shutdown_mode(&mut self, mode: ShutdownMode);
+
+    fn set_hysteresis(&mut self, mode: Hysteresis);
+    fn get_hysteresis(&self) -> Hysteresis;
 }
 
 pub fn new() -> Register {
@@ -131,10 +144,6 @@ pub fn new() -> Register {
 
 /// Sensor configuration register.
 impl Configuration for Register {
-    fn get_register_ptr() -> u8 {
-        REGISTER_PTR
-    }
-
     fn get_alert_mode(&self) -> AlertMode {
         if self.get_bit(0) {
             return AlertMode::Interrupt;
@@ -233,9 +242,49 @@ impl Configuration for Register {
     fn set_shutdown_mode(&mut self, mode: ShutdownMode) {
         self.set_bit(8, bool(mode as isize));
     }
+
+    fn set_hysteresis(&mut self, mode: Hysteresis) {
+        &self.set_bit(9, (mode as i64).get_bit(0));
+        &self.set_bit(10, (mode as i64).get_bit(1));
+    }
+
+    fn get_hysteresis(&self) -> Hysteresis {
+        let val: u8 = &self.get_msb() >> 1 & 0b11u8;
+        match val {
+            val if val == Hysteresis::Deg_0_0C as u8 => Hysteresis::Deg_0_0C,
+            val if val == Hysteresis::Deg_1_5C as u8 => Hysteresis::Deg_1_5C,
+            val if val == Hysteresis::Deg_3_0C as u8 => Hysteresis::Deg_3_0C,
+            val if val == Hysteresis::Deg_6_0C as u8 => Hysteresis::Deg_6_0C,
+            _ => panic!("invalid value")
+        }
+    }
 }
 
 /// dirty little helper where 0 is false, > 0 is true
 fn bool(val: isize) -> bool {
     val != 0
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn hysteresis() {
+        let mut reg: Register = new();
+        assert_eq!(reg.get_hysteresis(), Hysteresis::Deg_0_0C);
+
+        reg.set_hysteresis(Hysteresis::Deg_1_5C);
+        assert_eq!(reg.get_hysteresis(), Hysteresis::Deg_1_5C);
+
+        reg.set_hysteresis(Hysteresis::Deg_3_0C);
+        assert_eq!(reg.get_hysteresis(), Hysteresis::Deg_3_0C);
+
+        reg.set_hysteresis(Hysteresis::Deg_6_0C);
+        assert_eq!(reg.get_hysteresis(), Hysteresis::Deg_6_0C);
+
+        reg.set_hysteresis(Hysteresis::Deg_0_0C);
+        assert_eq!(reg.get_hysteresis(), Hysteresis::Deg_0_0C);
+    }
 }
