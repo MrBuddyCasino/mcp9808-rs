@@ -3,14 +3,12 @@ extern crate cast;
 use cast::f32;
 use reg::Register;
 use reg_res::ResolutionVal;
-use core::fmt::Debug;
+use prelude::*;
 
 const REGISTER_PTR: u8 = 0b0101;
 const REGISTER_SIZE: u8 = 2;
 
-pub trait Temperature: Debug + Copy + Clone {
-    //    fn new(buf: &[u8]) -> Result<Temperature, u8> where Temperature: Sized;
-    fn get_register_ptr() -> u8;
+pub trait Temperature: Read {
     fn is_temp_critical(&self) -> bool;
     fn get_temperature(&self, res: ResolutionVal) -> f32;
 }
@@ -20,10 +18,6 @@ pub fn new() -> Register {
 }
 
 impl Temperature for Register {
-    fn get_register_ptr() -> u8 {
-        REGISTER_PTR
-    }
-
     fn is_temp_critical(&self) -> bool {
         self.get_bit(15)
     }

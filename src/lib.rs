@@ -15,6 +15,7 @@ use reg_manuf_id::ManufacturerId;
 use reg_temp::Temperature;
 
 pub mod reg;
+mod prelude;
 pub mod reg_conf;
 pub mod reg_device_id;
 pub mod reg_manuf_id;
@@ -60,31 +61,32 @@ impl<I2C, E> MCP9808<I2C>
         self.i2c
     }
 
-    fn register_from_ic2<T>(&mut self, mut reg: T) -> Result<T, Error<E>>
-        where T: reg::Read<I2C, E>,
+    fn read_register<T>(&mut self, mut reg: T) -> Result<T, Error<E>>
+        where T: prelude::Read,
               I2C: i2c::WriteRead {
         reg.read_from_device(&mut self.i2c, self.addr).map_err(Error::I2c)?;
         Ok(reg)
     }
 
+    pub fn write_register<R: prelude::Write>(&mut self, reg: R) -> Result<(), Error<E>> {
+        reg.write_to_device(&mut self.i2c, self.addr).map_err(Error::I2c)?;
+        Ok(())
+    }
+
     pub fn read_manufacturer_id(&mut self) -> Result<impl ManufacturerId, Error<E>> {
-        self.register_from_ic2(reg_manuf_id::new())
+        self.read_register(reg_manuf_id::new())
     }
 
     pub fn read_device_id(&mut self) -> Result<impl DeviceId, Error<E>> {
-        self.register_from_ic2(reg_device_id::new())
+        self.read_register(reg_device_id::new())
     }
 
     /// Read temperature register. Its double-buffered so no wait required.
     pub fn read_temperature(&mut self) -> Result<impl Temperature, Error<E>> {
-        self.register_from_ic2(reg_temp::new())
+        self.read_register(reg_temp::new())
     }
 
     pub fn read_configuration(&mut self) -> Result<impl Configuration, Error<E>> {
-        self.register_from_ic2(reg_conf::new())
-    }
-
-    pub fn write_register<R: reg::Write<I2C>>(&mut self, reg: R) -> Result<(), R::WriteError> {
-        reg.write_to_device(&mut self.i2c, self.addr)
+        self.read_register(reg_conf::new())
     }
 }

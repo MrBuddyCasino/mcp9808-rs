@@ -1,5 +1,4 @@
 use bit_field::BitField;
-use hal::blocking::i2c;
 
 #[derive(Debug, Copy, Clone)]
 pub struct Register {
@@ -11,47 +10,6 @@ pub struct Register {
     len: u8,
 }
 
-/// trait for a register that can be read from an i2c device
-pub trait Read<I2C, E> {
-    /// Error type
-    type ReadError;
-
-    fn read_from_device(&mut self, i2c: &mut I2C, addr: u8) -> Result<(), E>;
-}
-
-
-impl<I2C, E> Read<I2C, E> for Register
-    where
-        I2C: i2c::WriteRead<Error=E>, {
-    type ReadError = I2C::Error;
-
-    fn read_from_device(&mut self, i2c: &mut I2C, addr: u8) -> Result<(), E> {
-        i2c.write_read(addr, &[self.ptr], &mut self.buf[0..self.len as usize])?;
-        Ok(())
-    }
-}
-
-/// trait for a register that can be written to an i2c device
-pub trait Write<I2C> {
-    /// Error type
-    type WriteError;
-
-    fn write_to_device(&self, i2c: &mut I2C, addr: u8) -> Result<(), Self::WriteError>;
-}
-
-impl<I2C> Write<I2C> for Register
-    where I2C: i2c::Write {
-    type WriteError = I2C::Error;
-
-    fn write_to_device(&self, i2c: &mut I2C, addr: u8) -> Result<(), Self::WriteError> {
-        // reg ptr + 1 or 2 bytes
-        let mut buf = [self.get_ptr(); 3];
-        for (i, item) in self.get_buf().iter().enumerate() {
-            buf[i + 1] = *item;
-        }
-        i2c.write(addr, &buf[0..self.len as usize])
-    }
-}
 
 impl Register {
     pub fn new(ptr: u8, len: u8) -> Self {
@@ -69,6 +27,10 @@ impl Register {
 
     pub fn get_ptr(&self) -> u8 {
         self.ptr
+    }
+
+    pub fn get_len(&self) -> u8 {
+        self.len
     }
 
     /// lower byte, bits 0-7, availability depends on register type
