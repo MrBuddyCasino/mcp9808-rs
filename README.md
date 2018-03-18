@@ -18,13 +18,31 @@ Details and datasheet: http://www.microchip.com/wwwproducts/en/en556182
 
 
 ## Status
-Work In Progress
-- [x] temperature register, though slightly imprecise
+Feature complete, but needs more testing.
+- [x] temperature register
 - [x] configuration register
 - [x] resolution register
 - [x] manufacturer ID and device ID
-- [ ] temperature alert upper & lower
-- [ ] critical temperature
+- [x] temperature alert upper & lower
+- [x] critical temperature
+
+
+## Usage
+
+Assuming you have a reference to the HAL's I2C bus:
+
+```
+    let mut mcp9808 = MCP9808::new(i2c);
+
+    // how to read & write register
+    let mut conf = mcp9808.read_configuration().unwrap();
+    conf.set_shutdown_mode(ShutdownMode::Shutdown);
+    let _c = mcp9808.write_register(conf);
+    
+    // read temperature register
+    let temp = mcp9808.read_temperature().unwrap();
+    temp.get_celcius(ResolutionVal::Deg_0_0625C)
+```
 
 
 ## License
