@@ -1,6 +1,6 @@
-use core::fmt::Debug;
 use bit_field::BitField;
 use reg::Register;
+use prelude::Write;
 
 /// Alert Output Mode bit
 /// This bit cannot be altered when either of the Lock bits are set (bit 6 and bit 7).
@@ -106,7 +106,7 @@ pub enum Hysteresis {
 const REGISTER_PTR: u8 = 0b0001;
 const REGISTER_SIZE: u8 = 2;
 
-pub trait Configuration: Debug + Copy + Clone {
+pub trait Configuration: Write {
     fn get_alert_mode(&self) -> AlertMode;
     fn set_alert_mode(&mut self, mode: AlertMode);
 

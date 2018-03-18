@@ -3,7 +3,7 @@ name = "mcp9808"
 version = "0.1.0"
 authors = ["Michael Böckling <michael@boeckling.net>"]
 categories = ["embedded", "hardware-support", "no-std"]
-keywords = ["embedded-hal", "temperature", "sensor"]
+keywords = ["embedded-hal-driver", "microchip", "driver", "temperature", "sensor"]
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/MrBuddyCasino/mcp9808-rs"
 
