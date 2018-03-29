@@ -6,7 +6,7 @@ repository = "https://github.com/MrBuddyCasino/mcp9808-rs"
 categories = ["embedded", "hardware-support", "no-std"]
 keywords = ["embedded-hal-driver", "microchip", "driver", "temperature", "sensor"]
 license = "MIT OR Apache-2.0"
-description = "Platform agnostic Rust driver for the Microchip MCP3425 ADC."
+description = "Platform agnostic Rust driver for the Microchip MCP9808 temperature sensor."
 readme = "README.md"
 
 [dependencies]
