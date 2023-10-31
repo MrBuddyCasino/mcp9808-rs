@@ -22,12 +22,12 @@ const BIT_SIGN: u8 = 0x10;
 /// 2-3 fractional part, 4-11 decimal part
 /// bit 1-0 Unimplemented: Read as ‘0
 pub trait ReadableTempRegister: Read {
-    /// degree celcius as float
+    /// degree celsius as float
     #[cfg(feature = "with_floating_point")]
-    fn get_celcius(&self, res: ResolutionVal) -> f32;
+    fn get_celsius(&self, res: ResolutionVal) -> f32;
 
     /// avoids floats, but only works up to 0.125 resolution
-    fn get_milli_celcius(&self, res: ResolutionVal) -> i32;
+    fn get_milli_celsius(&self, res: ResolutionVal) -> i32;
 
     /// raw register value
     fn get_raw_value(&self) -> u16;
@@ -35,7 +35,7 @@ pub trait ReadableTempRegister: Read {
 
 impl ReadableTempRegister for Register {
     #[cfg(feature = "with_floating_point")]
-    fn get_celcius(&self, res: ResolutionVal) -> f32 {
+    fn get_celsius(&self, res: ResolutionVal) -> f32 {
         let high = self.get_msb() & 0x1f; // clear flags
         let low: u8 = self.get_lsb().unwrap();
 
@@ -46,7 +46,7 @@ impl ReadableTempRegister for Register {
         ftemp
     }
 
-    fn get_milli_celcius(&self, res: ResolutionVal) -> i32 {
+    fn get_milli_celsius(&self, res: ResolutionVal) -> i32 {
         if res == ResolutionVal::Deg_0_0625C {
             panic!("precision invalid for milli C°")
         }
@@ -65,14 +65,14 @@ impl ReadableTempRegister for Register {
 
 pub trait WritableTempRegister: ReadableTempRegister + Write {
     #[cfg(feature = "with_floating_point")]
-    fn set_celcius(&mut self, val: f32);
+    fn set_celsius(&mut self, val: f32);
 
-    fn set_milli_celcius(&mut self, val: i32);
+    fn set_milli_celsius(&mut self, val: i32);
 }
 
 impl WritableTempRegister for Register {
     #[cfg(feature = "with_floating_point")]
-    fn set_celcius(&mut self, val: f32) {
+    fn set_celsius(&mut self, val: f32) {
         if val >= f32(RANGE_LIMIT) || val <= -f32(RANGE_LIMIT) {
             panic!(
                 "temperature {} exceeds valid range of +-{}",
@@ -99,7 +99,7 @@ impl WritableTempRegister for Register {
         self.set_lsb(low);
     }
 
-    fn set_milli_celcius(&mut self, val: i32) {
+    fn set_milli_celsius(&mut self, val: i32) {
         if val.abs() >= 1000 * RANGE_LIMIT as i32 {
             panic!(
                 "temperature {} exceeds valid range of +-{}",
@@ -185,78 +185,78 @@ mod tests {
         let mut reg = Register::new(1, 2);
         reg.set_buf([msb, lsb]);
 
-        let temp = reg.get_celcius(ResolutionVal::Deg_0_0625C);
+        let temp = reg.get_celsius(ResolutionVal::Deg_0_0625C);
         assert_eq!(temp, 25.25);
 
-        let temp = reg.get_milli_celcius(ResolutionVal::Deg_0_125C);
+        let temp = reg.get_milli_celsius(ResolutionVal::Deg_0_125C);
         assert_eq!(temp, 25250);
     }
 
     #[test]
-    fn set_celcius_integer() {
+    fn set_celsius_integer() {
         let mut reg = Register::new(1, 2);
 
         // example bit pattern taken from data sheet, page 23
-        reg.set_celcius(90.0);
+        reg.set_celsius(90.0);
         assert_eq!(0b00000101, reg.get_msb());
         assert_eq!(0b10100000, reg.get_lsb().unwrap());
 
-        let temp = reg.get_celcius(ResolutionVal::Deg_0_25C);
+        let temp = reg.get_celsius(ResolutionVal::Deg_0_25C);
         assert_eq!(temp, 90.00);
 
-        let temp = reg.get_milli_celcius(ResolutionVal::Deg_0_25C);
+        let temp = reg.get_milli_celsius(ResolutionVal::Deg_0_25C);
         assert_eq!(temp, 90000);
     }
 
     #[test]
-    fn set_celcius_fractional() {
+    fn set_celsius_fractional() {
         let mut reg = Register::new(1, 2);
 
         // example bit pattern taken from data sheet, page 23
-        reg.set_celcius(90.75);
+        reg.set_celsius(90.75);
         assert_eq!(0b00000101, reg.get_msb());
         assert_eq!(0b10101100, reg.get_lsb().unwrap());
 
-        let temp = reg.get_celcius(ResolutionVal::Deg_0_25C);
+        let temp = reg.get_celsius(ResolutionVal::Deg_0_25C);
         assert_eq!(temp, 90.75);
 
-        let temp = reg.get_milli_celcius(ResolutionVal::Deg_0_25C);
+        let temp = reg.get_milli_celsius(ResolutionVal::Deg_0_25C);
         assert_eq!(temp, 90750);
 
-        reg.set_celcius(90.25);
+        reg.set_celsius(90.25);
         assert_eq!(0b00000101, reg.get_msb());
         assert_eq!(0b10100100, reg.get_lsb().unwrap());
     }
 
     #[test]
-    fn set_milli_celcius() {
+    fn set_milli_celsius() {
         let mut reg = Register::new(1, 2);
 
         // example bit pattern taken from data sheet, page 23
-        reg.set_milli_celcius(90000);
+        reg.set_milli_celsius(90000);
         assert_eq!(0b00000101, reg.get_msb());
         assert_eq!(0b10100000, reg.get_lsb().unwrap());
 
-        let temp = reg.get_celcius(ResolutionVal::Deg_0_25C);
+        let temp = reg.get_celsius(ResolutionVal::Deg_0_25C);
         assert_eq!(temp, 90.00);
 
-        let temp = reg.get_milli_celcius(ResolutionVal::Deg_0_25C);
+        let temp = reg.get_milli_celsius(ResolutionVal::Deg_0_25C);
         assert_eq!(temp, 90000);
     }
 
     #[test]
-    fn set_milli_celcius_fractional() {
+    fn set_milli_celsius_fractional() {
         let mut reg = Register::new(1, 2);
 
         // example bit pattern taken from data sheet, page 23
-        reg.set_milli_celcius(90250);
+        reg.set_milli_celsius(90250);
         assert_eq!(0b00000101, reg.get_msb());
         assert_eq!(0b10100100, reg.get_lsb().unwrap());
 
-        let temp = reg.get_celcius(ResolutionVal::Deg_0_25C);
+        let temp = reg.get_celsius(ResolutionVal::Deg_0_25C);
         assert_eq!(temp, 90.25);
 
-        let temp = reg.get_milli_celcius(ResolutionVal::Deg_0_25C);
+        let temp = reg.get_milli_celsius(ResolutionVal::Deg_0_25C);
         assert_eq!(temp, 90250);
     }
 }
