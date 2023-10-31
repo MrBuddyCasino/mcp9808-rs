@@ -1,8 +1,11 @@
 extern crate cast;
 
+#[cfg(feature = "with_floating_point")]
 use cast::f32;
-use cast::i16;
+#[cfg(feature = "with_floating_point")]
 use core::f32;
+
+use cast::i16;
 use prelude::Read;
 use prelude::Write;
 use reg::Register;
@@ -20,6 +23,7 @@ const BIT_SIGN: u8 = 0x10;
 /// bit 1-0 Unimplemented: Read as ‘0
 pub trait ReadableTempRegister: Read {
     /// degree celcius as float
+    #[cfg(feature = "with_floating_point")]
     fn get_celcius(&self, res: ResolutionVal) -> f32;
 
     /// avoids floats, but only works up to 0.125 resolution
@@ -30,6 +34,7 @@ pub trait ReadableTempRegister: Read {
 }
 
 impl ReadableTempRegister for Register {
+    #[cfg(feature = "with_floating_point")]
     fn get_celcius(&self, res: ResolutionVal) -> f32 {
         let high = self.get_msb() & 0x1f; // clear flags
         let low: u8 = self.get_lsb().unwrap();
@@ -59,11 +64,14 @@ impl ReadableTempRegister for Register {
 }
 
 pub trait WritableTempRegister: ReadableTempRegister + Write {
+    #[cfg(feature = "with_floating_point")]
     fn set_celcius(&mut self, val: f32);
+
     fn set_milli_celcius(&mut self, val: i32);
 }
 
 impl WritableTempRegister for Register {
+    #[cfg(feature = "with_floating_point")]
     fn set_celcius(&mut self, val: f32) {
         if val >= f32(RANGE_LIMIT) || val <= -f32(RANGE_LIMIT) {
             panic!(
@@ -136,6 +144,7 @@ fn get_fractional_part_dec(res: ResolutionVal, low: u8) -> u16 {
     (fract >> (3 - res as u16)) * get_precision_factor_dec(res)
 }
 
+#[cfg(feature = "with_floating_point")]
 fn get_fractional_part_float(res: ResolutionVal, low: u8) -> f32 {
     let fract = low & 0x000F; // mask nibble
     f32(fract >> (3 - res as u8)) * get_precision_factor_float(res)
@@ -144,6 +153,7 @@ fn get_fractional_part_float(res: ResolutionVal, low: u8) -> f32 {
 //fn set_fractional_part_float(res: ResolutionVal, val: f32) {}
 //fn set_fractional_part_dec(res: ResolutionVal, val: i32) {}
 
+#[cfg(feature = "with_floating_point")]
 fn get_precision_factor_float(res: ResolutionVal) -> f32 {
     match res {
         ResolutionVal::Deg_0_0625C => 0.0625,

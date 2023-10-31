@@ -1,6 +1,6 @@
 [package]
 name = "mcp9808"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Michael Böckling <michael@boeckling.net>"]
 repository = "https://github.com/MrBuddyCasino/mcp9808-rs"
 categories = ["embedded", "hardware-support", "no-std"]
@@ -14,6 +14,11 @@ keywords = [
 license = "MIT OR Apache-2.0"
 description = "Platform agnostic Rust driver for the Microchip MCP9808 temperature sensor."
 readme = "README.md"
+
+[features]
+default = ["with_floating_point"]
+with_floating_point = []
+no_floating_point = []
 
 [dependencies]
 embedded-hal = "0.2.7"
