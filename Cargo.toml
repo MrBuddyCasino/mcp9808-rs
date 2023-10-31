@@ -1,6 +1,6 @@
 [package]
 name = "mcp9808"
-version = "0.1.1"
+version = "0.2.0"
 authors = ["Michael Böckling <michael@boeckling.net>"]
 repository = "https://github.com/MrBuddyCasino/mcp9808-rs"
 categories = ["embedded", "hardware-support", "no-std"]
@@ -21,7 +21,7 @@ with_floating_point = []
 no_floating_point = []
 
 [dependencies]
-embedded-hal = "0.2.7"
+embedded-hal = { version = "1.0.0-rc.1" }
 bit_field = "0.10.2"
 
 [dependencies.cast]
