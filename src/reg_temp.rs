@@ -30,12 +30,11 @@ impl Temperature for Register {
     }
 }
 
-
+#[allow(clippy::bool_assert_comparison)]
 #[cfg(test)]
 mod tests {
     /// prevent auto-format fuckup
     use super::*;
-
 
     #[test]
     fn alert_critical() {

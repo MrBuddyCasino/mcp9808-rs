@@ -1,7 +1,3 @@
-#![feature(conservative_impl_trait, universal_impl_trait)]
-//#![feature(trait_alias)]
-#![feature(core_float)]
-
 #![deny(warnings)]
 #![no_std]
 
@@ -13,14 +9,13 @@ use hal::blocking::i2c;
 use reg_conf::Configuration;
 use reg_device_id::DeviceId;
 use reg_manuf_id::ManufacturerId;
-use reg_temp::Temperature;
 use reg_res::Resolution;
+use reg_temp::Temperature;
 use reg_temp_alert_crit::CriticalTemperatureAlert;
 use reg_temp_alert_lower::LowerTemperatureAlert;
 use reg_temp_alert_upper::UpperTemperatureAlert;
 
 mod prelude;
-pub mod reg_temp_generic;
 pub mod reg;
 pub mod reg_conf;
 pub mod reg_device_id;
@@ -30,12 +25,12 @@ pub mod reg_temp;
 pub mod reg_temp_alert_crit;
 pub mod reg_temp_alert_lower;
 pub mod reg_temp_alert_upper;
-
+pub mod reg_temp_generic;
 
 /// I2C address
 #[derive(Clone, Copy)]
 pub enum Address {
-    Default = 0b0011000
+    Default = 0b0011000,
 }
 
 /// All possible errors in this crate
@@ -52,10 +47,9 @@ pub struct MCP9808<I2C> {
     i2c: I2C,
 }
 
-
 impl<I2C, E> MCP9808<I2C>
-    where I2C: i2c::Write<Error=E> + i2c::WriteRead<Error=E>
-
+where
+    I2C: i2c::Write<Error = E> + i2c::WriteRead<Error = E>,
 {
     /// Creates a new driver from an I2C peripheral.
     pub fn new(i2c: I2C) -> Self {
@@ -71,14 +65,18 @@ impl<I2C, E> MCP9808<I2C>
     }
 
     fn read_register<T>(&mut self, mut reg: T) -> Result<T, Error<E>>
-        where T: prelude::Read,
-              I2C: i2c::WriteRead {
-        reg.read_from_device(&mut self.i2c, self.addr).map_err(Error::I2c)?;
+    where
+        T: prelude::Read,
+        I2C: i2c::WriteRead,
+    {
+        reg.read_from_device(&mut self.i2c, self.addr)
+            .map_err(Error::I2c)?;
         Ok(reg)
     }
 
     pub fn write_register<R: prelude::Write>(&mut self, reg: R) -> Result<(), Error<E>> {
-        reg.write_to_device(&mut self.i2c, self.addr).map_err(Error::I2c)?;
+        reg.write_to_device(&mut self.i2c, self.addr)
+            .map_err(Error::I2c)?;
         Ok(())
     }
 

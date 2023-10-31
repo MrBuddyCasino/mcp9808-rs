@@ -10,7 +10,6 @@ pub struct Register {
     len: u8,
 }
 
-
 impl Register {
     pub fn new(ptr: u8, len: u8) -> Self {
         if ptr == 0 || ptr > 0b1000u8 {
@@ -68,9 +67,9 @@ impl Register {
         }
 
         if offset > 7 {
-            return self.get_msb().get_bit(offset - 8);
+            self.get_msb().get_bit(offset - 8)
         } else {
-            return self.get_lsb().unwrap().get_bit(offset);
+            self.get_lsb().unwrap().get_bit(offset)
         }
     }
 
@@ -93,12 +92,14 @@ impl Register {
 
     pub fn as_u16(&self) -> u16 {
         let (lo, hi) = (self.get_lsb(), self.get_msb());
-        if lo.is_none() { return self.get_msb() as u16; }
+        if lo.is_none() {
+            return self.get_msb() as u16;
+        }
         ((hi as u16) << 8) + (lo.unwrap() as u16)
     }
 }
 
-
+#[allow(clippy::bool_assert_comparison)]
 #[cfg(test)]
 mod tests {
     use super::*;
