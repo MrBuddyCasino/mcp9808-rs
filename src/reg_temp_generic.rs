@@ -1,21 +1,18 @@
 extern crate cast;
 
-#[allow(unused_imports)]
-use core::num::Float;
-use core::f32;
-//use cast::u16;
-//use cast::u8;
-use cast::i16;
-//use cast::i32;
+#[cfg(feature = "with_floating_point")]
 use cast::f32;
-use reg::Register;
+#[cfg(feature = "with_floating_point")]
+use core::f32;
+
+use cast::i16;
 use prelude::Read;
 use prelude::Write;
+use reg::Register;
 use reg_res::ResolutionVal;
 
 const RANGE_LIMIT: i16 = 256;
 const BIT_SIGN: u8 = 0x10;
-
 
 /// internal generic trait for temperature registers
 ///
@@ -26,6 +23,7 @@ const BIT_SIGN: u8 = 0x10;
 /// bit 1-0 Unimplemented: Read as ‘0
 pub trait ReadableTempRegister: Read {
     /// degree celcius as float
+    #[cfg(feature = "with_floating_point")]
     fn get_celcius(&self, res: ResolutionVal) -> f32;
 
     /// avoids floats, but only works up to 0.125 resolution
@@ -36,6 +34,7 @@ pub trait ReadableTempRegister: Read {
 }
 
 impl ReadableTempRegister for Register {
+    #[cfg(feature = "with_floating_point")]
     fn get_celcius(&self, res: ResolutionVal) -> f32 {
         let high = self.get_msb() & 0x1f; // clear flags
         let low: u8 = self.get_lsb().unwrap();
@@ -48,7 +47,9 @@ impl ReadableTempRegister for Register {
     }
 
     fn get_milli_celcius(&self, res: ResolutionVal) -> i32 {
-        if res == ResolutionVal::Deg_0_0625C { panic!("precision invalid for milli C°") }
+        if res == ResolutionVal::Deg_0_0625C {
+            panic!("precision invalid for milli C°")
+        }
         let high = self.get_msb() & 0x1f; // clear flags
         let low: u8 = self.get_lsb().unwrap();
 
@@ -58,20 +59,25 @@ impl ReadableTempRegister for Register {
     }
 
     fn get_raw_value(&self) -> u16 {
-        *&self.as_u16()
+        self.as_u16()
     }
 }
 
-
 pub trait WritableTempRegister: ReadableTempRegister + Write {
+    #[cfg(feature = "with_floating_point")]
     fn set_celcius(&mut self, val: f32);
+
     fn set_milli_celcius(&mut self, val: i32);
 }
 
 impl WritableTempRegister for Register {
+    #[cfg(feature = "with_floating_point")]
     fn set_celcius(&mut self, val: f32) {
-        if val.abs() >= f32(RANGE_LIMIT) {
-            panic!("temperature {} exceeds valid range of +-{}", val, RANGE_LIMIT)
+        if val >= f32(RANGE_LIMIT) || val <= -f32(RANGE_LIMIT) {
+            panic!(
+                "temperature {} exceeds valid range of +-{}",
+                val, RANGE_LIMIT
+            )
         }
 
         let temp_dec: u16 = val as u16;
@@ -79,12 +85,13 @@ impl WritableTempRegister for Register {
         let mut low = (temp_dec * 16) as u8;
 
         if val < 0.0 {
-            high = high | BIT_SIGN; // set sign bit
+            high |= BIT_SIGN; // set sign bit
         }
 
         // fract() is std only
         let fract: f32 = val - (temp_dec as f32);
-        let mut fract_bits: u8 = (fract / get_precision_factor_float(ResolutionVal::Deg_0_0625C)) as u8;
+        let mut fract_bits: u8 =
+            (fract / get_precision_factor_float(ResolutionVal::Deg_0_0625C)) as u8;
         fract_bits &= 0b1100; // mask bit 0+1
         low += fract_bits;
 
@@ -94,20 +101,24 @@ impl WritableTempRegister for Register {
 
     fn set_milli_celcius(&mut self, val: i32) {
         if val.abs() >= 1000 * RANGE_LIMIT as i32 {
-            panic!("temperature {} exceeds valid range of +-{}", val, RANGE_LIMIT)
+            panic!(
+                "temperature {} exceeds valid range of +-{}",
+                val, RANGE_LIMIT
+            )
         }
 
-        let temp_dec: i32 = (val / 1000) as i32;
+        let temp_dec: i32 = val / 1000;
         let mut high = (temp_dec / 16) as u8;
         let mut low = (temp_dec * 16) as u8;
 
         if val < 0 {
-            high = high | BIT_SIGN; // set sign bit
+            high |= BIT_SIGN; // set sign bit
         }
 
         // fract() is std only
         let fract: i32 = val - (temp_dec * 1000);
-        let mut fract_bits: u8 = (fract / get_precision_factor_dec(ResolutionVal::Deg_0_0625C) as i32) as u8;
+        let mut fract_bits: u8 =
+            (fract / get_precision_factor_dec(ResolutionVal::Deg_0_0625C) as i32) as u8;
         fract_bits &= 0b1100; // mask bit 0+1
         low += fract_bits;
 
@@ -116,25 +127,24 @@ impl WritableTempRegister for Register {
     }
 }
 
-
 fn get_decimal_part(mut high: u8, low: u8) -> i16 {
-    high = high & 0x1f; // clear flags
+    high &= 0x1f; // clear flags
 
     // sign bit set, < 0°C
     if high & BIT_SIGN == BIT_SIGN {
-        high = high & 0x0f; // clear sign bit
-        return 256 - (i16(high) * 16 + i16(low) / 16);
+        high &= 0x0f; // clear sign bit
+        256 - (i16(high) * 16 + i16(low) / 16)
     } else {
-        return i16(high) * 16 + i16(low) / 16;
+        i16(high) * 16 + i16(low) / 16
     }
 }
-
 
 fn get_fractional_part_dec(res: ResolutionVal, low: u8) -> u16 {
     let fract: u16 = (low & 0x000F).into(); // mask nibble
     (fract >> (3 - res as u16)) * get_precision_factor_dec(res)
 }
 
+#[cfg(feature = "with_floating_point")]
 fn get_fractional_part_float(res: ResolutionVal, low: u8) -> f32 {
     let fract = low & 0x000F; // mask nibble
     f32(fract >> (3 - res as u8)) * get_precision_factor_float(res)
@@ -143,13 +153,13 @@ fn get_fractional_part_float(res: ResolutionVal, low: u8) -> f32 {
 //fn set_fractional_part_float(res: ResolutionVal, val: f32) {}
 //fn set_fractional_part_dec(res: ResolutionVal, val: i32) {}
 
-
+#[cfg(feature = "with_floating_point")]
 fn get_precision_factor_float(res: ResolutionVal) -> f32 {
     match res {
         ResolutionVal::Deg_0_0625C => 0.0625,
         ResolutionVal::Deg_0_125C => 0.125,
         ResolutionVal::Deg_0_25C => 0.25,
-        ResolutionVal::Deg_0_5C => 0.5
+        ResolutionVal::Deg_0_5C => 0.5,
     }
 }
 
@@ -158,10 +168,9 @@ fn get_precision_factor_dec(res: ResolutionVal) -> u16 {
         ResolutionVal::Deg_0_0625C => 62,
         ResolutionVal::Deg_0_125C => 125,
         ResolutionVal::Deg_0_25C => 250,
-        ResolutionVal::Deg_0_5C => 500
+        ResolutionVal::Deg_0_5C => 500,
     }
 }
-
 
 #[cfg(test)]
 mod tests {
