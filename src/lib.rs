@@ -14,10 +14,12 @@ use crate::reg_temp::Temperature;
 use crate::reg_temp_alert_crit::CriticalTemperatureAlert;
 use crate::reg_temp_alert_lower::LowerTemperatureAlert;
 use crate::reg_temp_alert_upper::UpperTemperatureAlert;
+use crate::address::SlaveAddress;
 use embedded_hal::i2c::{I2c, SevenBitAddress};
 
 pub mod error;
 mod prelude;
+mod address;
 pub mod reg;
 pub mod reg_conf;
 pub mod reg_device_id;
@@ -28,12 +30,6 @@ pub mod reg_temp_alert_crit;
 pub mod reg_temp_alert_lower;
 pub mod reg_temp_alert_upper;
 pub mod reg_temp_generic;
-
-/// I2C address
-#[derive(Clone, Copy)]
-pub enum Address {
-    Default = 0b0011000,
-}
 
 /// MCP9808 Driver
 pub struct MCP9808<I2C> {
@@ -47,9 +43,9 @@ where
     I2C::Error: Into<Error<I2C::Error>>,
 {
     /// Creates a new driver from an I2C peripheral.
-    pub fn new(i2c: I2C) -> Self {
+    pub fn new(i2c: I2C, addr: SlaveAddress) -> Self {
         MCP9808 {
-            addr: Address::Default as u8,
+            addr: addr.into(),
             i2c,
         }
     }
