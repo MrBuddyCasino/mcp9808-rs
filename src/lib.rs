@@ -19,7 +19,7 @@ use embedded_hal::i2c::{I2c, SevenBitAddress};
 
 pub mod error;
 mod prelude;
-mod address;
+pub mod address;
 pub mod reg;
 pub mod reg_conf;
 pub mod reg_device_id;
