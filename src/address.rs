@@ -8,22 +8,18 @@ const DEFAULT_ADDRESS: u8 = 0b1_1000;
 ///
 /// ## Default slave address
 /// ```
-/// use mcp9808::SlaveAddress;
-/// use mcp9808::MCP9808;
+/// use mcp9808::address::SlaveAddress;
 ///
-/// # let i2c = ();
-/// let mcp9808 = MCP9808::new(i2c, SlaveAddress::Default);
-/// assert_eq!(0b1_1000u8, mcp9808.address());
+/// # let DefaultAddress = SlaveAddress::Default.into();
+/// assert_eq!(0b1_1000u8, DefaultAddress);
 /// ```
 ///
 /// ## Alternative slave address
 /// ```
-/// use mcp9808::SlaveAddress;
-/// use mcp9808::MCP9808;
+/// use mcp9808::address::SlaveAddress;
 ///
-/// # let i2c = ();
-/// let mcp9808 = MCP9808::new(i2c, SlaveAddress::Alternative { a2: true, a1: false, a0: true });
-/// assert_eq!(0b1_1101u8, mcp9808.address());
+/// # let TestAddress = SlaveAddress::Alternative { a2: true, a1: false, a0: true }.into();
+/// assert_eq!(0b1_1101u8, TestAddress);
 /// ```
 #[derive(Debug, Clone, Copy)]
 pub enum SlaveAddress {
