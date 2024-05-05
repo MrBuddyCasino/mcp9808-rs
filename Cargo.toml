@@ -1,6 +1,6 @@
 [package]
 name = "mcp9808"
-version = "0.3.0"
+version = "0.4.0"
 authors = ["Michael Böckling <michael@boeckling.net>"]
 repository = "https://github.com/MrBuddyCasino/mcp9808-rs"
 categories = ["embedded", "hardware-support", "no-std"]
