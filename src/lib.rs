@@ -43,11 +43,17 @@ where
     I2C::Error: Into<Error<I2C::Error>>,
 {
     /// Creates a new driver from an I2C peripheral.
-    pub fn new(i2c: I2C, addr: SlaveAddress) -> Self {
+    pub fn new(i2c: I2C) -> Self {
         MCP9808 {
-            addr: addr.into(),
+            addr: SlaveAddress::Default.into(),
             i2c,
         }
+    }
+
+    /// Change i2c address
+    pub fn set_address(&mut self, addr: SlaveAddress) -> u8 {
+        self.addr = addr.into();
+        self.addr
     }
 
     /// release resources
